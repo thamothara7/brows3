@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.35] - 2026-05-23
+
+### Fixed
+- **Profile Secret Preservation**: Editing a profile between manual credentials and custom S3-compatible endpoints now preserves the saved secret when the update payload omits it, and only clears stored secrets when switching to a non-secret authentication method.
+- **Windows TLS Startup Stability**: Updated the AWS SDK runtime stack to remove the rustls native-root debug assertion path without replacing the operating system trust store.
+
 ## [0.2.34] - 2026-04-08
 
 ### Fixed

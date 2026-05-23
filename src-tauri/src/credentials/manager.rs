@@ -315,17 +315,44 @@ impl ProfileManager {
             ) if secret_access_key.is_empty() => {
                 *secret_access_key = old_secret.clone();
             }
+            (
+                CredentialType::Manual {
+                    secret_access_key: old_secret,
+                    ..
+                },
+                CredentialType::CustomEndpoint {
+                    secret_access_key, ..
+                },
+            ) if secret_access_key.is_empty() && !old_secret.is_empty() => {
+                *secret_access_key = old_secret.clone();
+            }
+            (
+                CredentialType::CustomEndpoint {
+                    secret_access_key: old_secret,
+                    ..
+                },
+                CredentialType::Manual {
+                    secret_access_key, ..
+                },
+            ) if secret_access_key.is_empty() && !old_secret.is_empty() => {
+                *secret_access_key = old_secret.clone();
+            }
             _ => {}
         }
 
-        if matches!(
+        let existing_used_keychain = matches!(
             existing_profile.credential_type,
             CredentialType::Manual { .. } | CredentialType::CustomEndpoint { .. }
-        ) {
+        );
+        let new_uses_keychain = matches!(
+            profile.credential_type,
+            CredentialType::Manual { .. } | CredentialType::CustomEndpoint { .. }
+        );
+
+        if existing_used_keychain && !new_uses_keychain {
             self.remove_secret(&existing_profile);
         }
 
-        // Update secret in keychain if needed
         self.store_secret(&profile)?;
 
         self.data.profiles.insert(id.to_string(), profile.clone());
@@ -444,6 +471,14 @@ impl ProfileManager {
 mod tests {
     use super::{CredentialType, Profile, ProfileManager};
     use std::collections::HashMap;
+    use std::path::PathBuf;
+
+    fn temp_config_dir(name: &str) -> PathBuf {
+        let dir =
+            std::env::temp_dir().join(format!("brows3-test-{}-{}", name, uuid::Uuid::new_v4()));
+        std::fs::create_dir_all(&dir).expect("temp config dir should be created");
+        dir
+    }
 
     #[test]
     fn manual_profile_deserializes_without_secret_in_json() {
@@ -574,5 +609,141 @@ mod tests {
             .expect("profile should exist");
         assert_eq!(profile.id, "legacy-key");
         assert!(profile.is_default);
+    }
+
+    #[tokio::test]
+    async fn update_preserves_secret_when_switching_manual_to_custom_endpoint() {
+        let config_dir = temp_config_dir("manual-to-custom");
+        let mut manager = ProfileManager::new(config_dir, true).expect("manager should initialize");
+
+        let created = manager
+            .add_profile(Profile::new(
+                "Manual".to_string(),
+                CredentialType::Manual {
+                    access_key_id: "access".to_string(),
+                    secret_access_key: "secret".to_string(),
+                },
+                Some("us-east-1".to_string()),
+            ))
+            .await
+            .expect("profile should be added");
+
+        let updated = manager
+            .update_profile(
+                &created.id,
+                Profile::new(
+                    "Custom".to_string(),
+                    CredentialType::CustomEndpoint {
+                        endpoint_url: "https://example.com".to_string(),
+                        access_key_id: "access".to_string(),
+                        secret_access_key: String::new(),
+                    },
+                    Some("auto".to_string()),
+                ),
+            )
+            .await
+            .expect("profile should be updated");
+
+        match updated.credential_type {
+            CredentialType::CustomEndpoint {
+                secret_access_key, ..
+            } => assert_eq!(secret_access_key, "secret"),
+            _ => panic!("expected custom endpoint credentials"),
+        }
+    }
+
+    #[tokio::test]
+    async fn update_preserves_secret_when_switching_custom_endpoint_to_manual() {
+        let config_dir = temp_config_dir("custom-to-manual");
+        let mut manager = ProfileManager::new(config_dir, true).expect("manager should initialize");
+
+        let created = manager
+            .add_profile(Profile::new(
+                "Custom".to_string(),
+                CredentialType::CustomEndpoint {
+                    endpoint_url: "https://example.com".to_string(),
+                    access_key_id: "access".to_string(),
+                    secret_access_key: "secret".to_string(),
+                },
+                Some("auto".to_string()),
+            ))
+            .await
+            .expect("profile should be added");
+
+        let updated = manager
+            .update_profile(
+                &created.id,
+                Profile::new(
+                    "Manual".to_string(),
+                    CredentialType::Manual {
+                        access_key_id: "access".to_string(),
+                        secret_access_key: String::new(),
+                    },
+                    Some("us-east-1".to_string()),
+                ),
+            )
+            .await
+            .expect("profile should be updated");
+
+        match updated.credential_type {
+            CredentialType::Manual {
+                secret_access_key, ..
+            } => assert_eq!(secret_access_key, "secret"),
+            _ => panic!("expected manual credentials"),
+        }
+    }
+
+    #[tokio::test]
+    async fn update_removes_secret_when_leaving_keychain_backed_credentials() {
+        let config_dir = temp_config_dir("leave-keychain");
+        let mut manager = ProfileManager::new(config_dir, true).expect("manager should initialize");
+
+        let created = manager
+            .add_profile(Profile::new(
+                "Manual".to_string(),
+                CredentialType::Manual {
+                    access_key_id: "access".to_string(),
+                    secret_access_key: "secret".to_string(),
+                },
+                Some("us-east-1".to_string()),
+            ))
+            .await
+            .expect("profile should be added");
+
+        manager
+            .update_profile(
+                &created.id,
+                Profile::new(
+                    "Shared".to_string(),
+                    CredentialType::SharedConfig {
+                        profile_name: Some("default".to_string()),
+                    },
+                    Some("us-east-1".to_string()),
+                ),
+            )
+            .await
+            .expect("profile should be updated");
+
+        let manual_again = manager
+            .update_profile(
+                &created.id,
+                Profile::new(
+                    "Manual Again".to_string(),
+                    CredentialType::Manual {
+                        access_key_id: "access".to_string(),
+                        secret_access_key: String::new(),
+                    },
+                    Some("us-east-1".to_string()),
+                ),
+            )
+            .await
+            .expect("profile should be updated");
+
+        match manual_again.credential_type {
+            CredentialType::Manual {
+                secret_access_key, ..
+            } => assert!(secret_access_key.is_empty()),
+            _ => panic!("expected manual credentials"),
+        }
     }
 }
