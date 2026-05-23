@@ -149,6 +149,39 @@ jobs:
         run: |
           pnpm tauri build ${{ matrix.args }}
 
+      - name: Name macOS updater archives
+        if: matrix.platform == 'macos-latest'
+        shell: bash
+        run: |
+          ARCH=""
+          if [[ "${{ matrix.args }}" == *"aarch64-apple-darwin"* ]]; then
+            ARCH="aarch64"
+          elif [[ "${{ matrix.args }}" == *"x86_64-apple-darwin"* ]]; then
+            ARCH="x64"
+          else
+            echo "::error::Unknown macOS target in matrix args: ${{ matrix.args }}"
+            exit 1
+          fi
+
+          found=0
+          while IFS= read -r -d '' archive; do
+            found=1
+            dir="$(dirname "$archive")"
+            renamed="$dir/Brows3_${RELEASE_VERSION}_${ARCH}.app.tar.gz"
+            mv "$archive" "$renamed"
+            if [ -f "$archive.sig" ]; then
+              mv "$archive.sig" "$renamed.sig"
+            else
+              echo "::error::Missing signature for $archive"
+              exit 1
+            fi
+          done < <(find src-tauri/target -type f -path '*/bundle/macos/*.app.tar.gz' -print0)
+
+          if [ "$found" -eq 0 ]; then
+            echo "::error::No macOS updater archive was generated."
+            exit 1
+          fi
+
       - name: Create Windows portable zip
         if: startsWith(matrix.platform, 'windows-')
         shell: bash
