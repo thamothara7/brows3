@@ -318,11 +318,11 @@ function SingleRow({ job, isNested = false }: { job: TransferJob; isNested?: boo
         <TableRow sx={{ '&:last-child td, &:last-child th': { border: 0 }, bgcolor: isNested ? 'action.hover' : 'inherit' }}>
             <TableCell component="th" scope="row">
                  <Chip 
-                    icon={status.icon} 
-                    label={status.label} 
-                    size="small" 
-                    color={status.color} 
-                    variant="outlined" 
+                    icon={status.icon}
+                    label={status.label}
+                    size="small"
+                    color={status.color}
+                    variant="outlined"
                     sx={{ borderRadius: 1, height: 24 }}
                 />
             </TableCell>
@@ -459,10 +459,10 @@ function GroupRow({ group }: { group: TransferGroupRow }) {
                 {/* 1. Status */}
                 <TableCell>
                     <Chip 
-                        label={statusLabel} 
-                        size="small" 
-                        color={statusColor} 
-                        variant="outlined" 
+                        label={statusLabel}
+                        size="small"
+                        color={statusColor}
+                        variant="outlined"
                         sx={{ borderRadius: 1, height: 24 }}
                     />
                 </TableCell>

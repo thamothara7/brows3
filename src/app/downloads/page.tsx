@@ -309,11 +309,11 @@ function SingleRow({ job, isNested = false }: { job: TransferJob; isNested?: boo
             {/* 1. Status */}
             <TableCell>
                 <Chip 
-                    icon={status.icon} 
-                    label={status.label} 
-                    size="small" 
-                    color={status.color} 
-                    variant="outlined" 
+                    icon={status.icon}
+                    label={status.label}
+                    size="small"
+                    color={status.color}
+                    variant="outlined"
                     sx={{ borderRadius: 1, height: 24 }}
                 />
             </TableCell>
@@ -466,10 +466,10 @@ function GroupRow({ group }: { group: TransferGroupRow }) {
                 {/* 1. Status */}
                 <TableCell>
                     <Chip 
-                        label={statusLabel} 
-                        size="small" 
-                        color={statusColor} 
-                        variant="outlined" 
+                        label={statusLabel}
+                        size="small"
+                        color={statusColor}
+                        variant="outlined"
                         sx={{ borderRadius: 1, height: 24 }}
                     />
                 </TableCell>
