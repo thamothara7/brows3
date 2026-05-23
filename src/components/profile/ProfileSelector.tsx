@@ -1,16 +1,13 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import {
   Box,
-  Button,
   FormControl,
   IconButton,
-  InputLabel,
   MenuItem,
   Select,
   SelectChangeEvent,
-  Tooltip,
   Typography,
   CircularProgress,
   Chip,
@@ -20,7 +17,6 @@ import {
   Add as AddIcon,
   Settings as SettingsIcon,
   CheckCircle as ConnectedIcon,
-  Error as DisconnectedIcon,
 } from '@mui/icons-material';
 import { useProfileStore } from '@/store/profileStore';
 import { Profile, profileApi, bucketApi, invalidateCache } from '@/lib/tauri';
@@ -76,11 +72,6 @@ export default function ProfileSelector() {
     setDialogOpen(true);
   };
 
-  const handleAddProfile = () => {
-    setEditingProfile(null);
-    setDialogOpen(true);
-  };
-  
   const handleDialogClose = () => {
     setDialogOpen(false);
     setEditingProfile(null);

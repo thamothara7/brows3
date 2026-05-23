@@ -15,8 +15,7 @@ import {
   alpha,
   useTheme,
 } from '@mui/material';
-import { useState, useEffect } from 'react';
-import { useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { operationsApi, ObjectMetadata } from '@/lib/tauri';
 import { BaseDialog } from '../common/BaseDialog';
 import { formatSize } from '@/lib/utils';
@@ -57,17 +56,7 @@ export default function PropertiesDialog({ open, onClose, bucketName, bucketRegi
   const theme = useTheme();
   const requestIdRef = useRef(0);
 
-  useEffect(() => {
-    if (open && bucketName && objectKey) {
-      fetchMetadata();
-    } else {
-        setMetadata(null);
-        setError(null);
-        setTabValue(0);
-    }
-  }, [open, bucketName, bucketRegion, objectKey]);
-
-  const fetchMetadata = async () => {
+  const fetchMetadata = useCallback(async () => {
     const requestId = ++requestIdRef.current;
     setLoading(true);
     setError(null);
@@ -90,7 +79,17 @@ export default function PropertiesDialog({ open, onClose, bucketName, bucketRegi
         setLoading(false);
       }
     }
-  };
+  }, [bucketName, bucketRegion, objectKey]);
+
+  useEffect(() => {
+    if (open && bucketName && objectKey) {
+      fetchMetadata();
+    } else {
+        setMetadata(null);
+        setError(null);
+        setTabValue(0);
+    }
+  }, [open, bucketName, objectKey, fetchMetadata]);
 
   const handleChange = (event: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);

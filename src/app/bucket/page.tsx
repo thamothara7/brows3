@@ -9,13 +9,6 @@ import {
   Chip,
   IconButton,
   Link,
-  Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
   Typography,
   CircularProgress,
   Alert,
@@ -28,12 +21,8 @@ import {
   DialogActions,
   TextField,
   Tooltip,
-  // Checkbox removed - using StyledCheckbox for WebKitGTK stability
-  Stack,
   Divider,
-  Skeleton,
   InputAdornment,
-  FormControlLabel,
   Fade,
 } from '@mui/material';
 import {
@@ -42,21 +31,14 @@ import {
   InsertDriveFile as FileIcon,
   Refresh as RefreshIcon,
   Home as HomeIcon,
-  Description as DescriptionIcon,
-  MoreVert as MoreVertIcon,
   CloudUpload as CloudUploadIcon,
   CreateNewFolder as CreateNewFolderIcon,
   Download as DownloadIcon,
   Delete as DeleteIcon,
-  ContentPaste as PasteIcon,
   DriveFileRenameOutline as RenameIcon,
-  ContentCopy as CopyIcon,
-  ContentCut as CutIcon,
   Info as InfoIcon,
   Search as SearchIcon,
   Close as CloseIcon,
-  Bolt as BoltIcon,
-  Sort as SortIcon,
   Storage as StorageIcon,
   FileCopy as FileCopyIcon,
   FilePresent as FilePresentIcon,
@@ -72,7 +54,6 @@ import { operationsApi, transferApi, objectApi, S3Object, copyToClipboard } from
 import { open, save } from '@tauri-apps/plugin-dialog';
 import { useTransferStore } from '@/store/transferStore';
 import { useClipboardStore } from '@/store/clipboardStore';
-import { useTabStore } from '@/store/tabStore';
 import { useProfileStore } from '@/store/profileStore';
 import PropertiesDialog from '@/components/dialogs/PropertiesDialog';
 import ObjectPreviewDialog from '@/components/dialogs/ObjectPreviewDialog';
@@ -83,7 +64,6 @@ import { toast } from '@/store/toastStore';
 import { useHistoryStore } from '@/store/historyStore';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { StyledCheckbox } from '@/components/common/StyledCheckbox';
-import { formatSize } from '@/lib/utils';
 
 // Concurrent paste batch size
 const PASTE_CONCURRENCY = 5;
@@ -103,9 +83,8 @@ function BucketContent() {
   const bucketRegion = searchParams.get('region') || 'us-east-1';
   const prefix = searchParams.get('prefix') || '';
   
-  const { data, isLoading, error: initialError, stats, refresh, loadMore, isLoadingMore, hasMore } = useObjects(bucketName || '', bucketRegion, prefix);
+  const { data, isLoading, error: initialError, refresh, loadMore } = useObjects(bucketName || '', bucketRegion, prefix);
   const addJob = useTransferStore(state => state.addJob);
-  const { addBucket } = useTabStore();
   const activeProfileId = useProfileStore(state => state.activeProfileId);
   
   // Sorting State
@@ -291,8 +270,6 @@ function BucketContent() {
     [data]
   );
 
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadMenuAnchor, setUploadMenuAnchor] = useState<null | HTMLElement>(null);
   
@@ -331,12 +308,12 @@ function BucketContent() {
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const displayError = (msg: string, details?: string) => {
+  const displayError = useCallback((msg: string, details?: string) => {
     toast.error(msg, details);
-  };
+  }, []);
 
   // Helper for success toast with optional navigation
-  const displaySuccess = (msg: string, path?: string) => {
+  const displaySuccess = useCallback((msg: string, path?: string) => {
     toast.success(msg, undefined, path ? {
         label: 'View',
         onClick: () => {
@@ -345,7 +322,7 @@ function BucketContent() {
             router.push(path);
         }
     } : undefined);
-  };
+  }, [router]);
 
   const breadcrumbs = useMemo(() => {
     const parts = prefix.split('/').filter(Boolean);
@@ -453,7 +430,7 @@ function BucketContent() {
      copy(items);
      clearSelection();
      displaySuccess(`Copied ${items.length} items`);
-  }, [bucketName, bucketRegion, copy, clearSelection]);
+  }, [bucketName, bucketRegion, copy, clearSelection, displaySuccess]);
 
   const handleCut = useCallback(() => {
     const keys = selectedKeysRef.current;
@@ -467,7 +444,7 @@ function BucketContent() {
     cut(items);
     clearSelection();
     displaySuccess(`Cut ${items.length} items to clipboard`);
-  }, [bucketName, bucketRegion, cut, clearSelection]);
+  }, [bucketName, bucketRegion, cut, clearSelection, displaySuccess]);
 
   const handlePaste = async () => {
     if (!bucketName || clipboardItems.length === 0) return;
@@ -580,8 +557,6 @@ function BucketContent() {
       
       if (selected) {
         setIsUploading(true);
-        setError(null);
-        
         const files = Array.isArray(selected) ? selected : [selected];
         let count = 0;
         
@@ -789,22 +764,6 @@ function BucketContent() {
   const handleMenuClose = () => {
     setMenuAnchorEl(null);
     setSelectedObject(null);
-  };
-
-  const handleDelete = async () => {
-    if (!bucketName || !selectedObject) return;
-    setIsDeleting(true);
-    try {
-      await operationsApi.deleteObject(bucketName, bucketRegion, selectedObject.key);
-      setDeleteConfirmOpen(false);
-      setSelectedObject(null);
-      displaySuccess('Item deleted');
-      refresh();
-    } catch (err) {
-      displayError(`Delete failed: ${err}`);
-    } finally {
-      setIsDeleting(false);
-    }
   };
 
   // Existing single actions

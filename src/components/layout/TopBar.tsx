@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { Suspense } from 'react';
+import Image from 'next/image';
 import {
   Box,
   IconButton,
@@ -47,7 +48,7 @@ export default function TopBar() {
     >
       {/* Brand */}
       <Box sx={{ display: 'flex', alignItems: 'center', flexGrow: 0, mr: 2 }}>
-        <img src="/logo.png" alt="Brows3" style={{ width: 28, height: 28, marginRight: 8, borderRadius: 4 }} />
+        <Image src="/logo.png" alt="Brows3" width={28} height={28} style={{ marginRight: 8, borderRadius: 4 }} />
         <Typography
           variant="h6"
           noWrap
@@ -105,4 +106,3 @@ export default function TopBar() {
     </Toolbar>
   );
 }
-

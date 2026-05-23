@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useCallback, useState, useEffect, useRef } from 'react';
 import { useTheme, alpha } from '@mui/material';
 import { useSettingsStore } from '@/store/settingsStore';
 import {
@@ -161,11 +161,23 @@ export default function ProfileDialog({ open, onClose, editProfile }: ProfileDia
     return () => {
       discoveryRequestIdRef.current += 1;
     };
-  }, [open, mode, editProfile]);
+  }, [open, mode, editProfile, formData.name]);
 
   const updateField = <K extends keyof ProfileFormData>(field: K, value: ProfileFormData[K]) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
+
+  const resetForm = useCallback(() => {
+    setFormData({
+      name: '',
+      credentialType: 'Environment',
+      region: defaultRegion || 'us-east-1',
+      profileName: 'default',
+      accessKeyId: '',
+      secretAccessKey: '',
+      endpointUrl: '',
+    });
+  }, [defaultRegion]);
 
   // Reset testing state when form data changes
   useEffect(() => {
@@ -173,7 +185,7 @@ export default function ProfileDialog({ open, onClose, editProfile }: ProfileDia
       setTesting(false);
       setTestResult(null);
     }
-  }, [formData]);
+  }, [formData, testing, testResult]);
 
   // Reset state when dialog opens/closes
   useEffect(() => {
@@ -191,7 +203,7 @@ export default function ProfileDialog({ open, onClose, editProfile }: ProfileDia
       editLoadRequestIdRef.current += 1;
       setSelectedProfile(null);
     }
-  }, [open, editProfile]);
+  }, [open, editProfile, resetForm]);
   
   // Handle edit profile prop
   useEffect(() => {
@@ -201,18 +213,6 @@ export default function ProfileDialog({ open, onClose, editProfile }: ProfileDia
       setSelectedProfile(editProfile);
     }
   }, [editProfile]);
-  
-  const resetForm = () => {
-    setFormData({
-      name: '',
-      credentialType: 'Environment',
-      region: defaultRegion || 'us-east-1',
-      profileName: 'default',
-      accessKeyId: '',
-      secretAccessKey: '',
-      endpointUrl: '',
-    });
-  };
   
   const loadProfileToForm = (profile: Profile) => {
     const cred = profile.credential_type;

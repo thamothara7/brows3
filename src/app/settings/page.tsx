@@ -22,12 +22,10 @@ import {
   Alert,
 } from '@mui/material';
 import {
-  Cached as CacheIcon,
   Update as UpdateIcon,
   Folder as FolderIcon,
   DeleteSweep as ClearIcon,
   MonitorHeart as MonitorIcon,
-  BugReport as BugIcon,
   CheckCircle as SuccessIcon,
   ErrorOutline as ErrorIcon,
   Info as InfoIcon,

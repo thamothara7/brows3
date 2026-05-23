@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useEffect, useCallback, useRef, Suspense, useDeferredValue } from 'react';
+import { useState, useMemo, useEffect, useRef, Suspense, useDeferredValue } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
   Box,
@@ -17,11 +17,9 @@ import {
   InputAdornment,
   Chip,
   IconButton,
-  Alert,
   Tooltip,
   Button,
   Container,
-  Grid,
   CircularProgress,
 } from '@mui/material';
 import {
@@ -31,10 +29,6 @@ import {
   Refresh as RefreshIcon,
   FolderOpen as FolderOpenIcon,
   ChevronRight as ChevronRightIcon,
-  ArrowForward as GoIcon,
-  History as HistoryIcon,
-  Explore as ExploreIcon,
-  Star as StarIcon,
 } from '@mui/icons-material';
 import { useProfileStore } from '@/store/profileStore';
 import { useBuckets } from '@/hooks/useBuckets';
@@ -51,7 +45,7 @@ function HomeContent() {
   // Use query parameter to toggle view instead of local state
   const searchParams = useSearchParams();
   const showBuckets = searchParams.get('view') === 'discovery';
-  const { buckets, isLoading, error, refresh, fetchBuckets } = useBuckets({ enabled: showBuckets });
+  const { buckets, isLoading, error, refresh } = useBuckets({ enabled: showBuckets });
   
   const [searchQuery, setSearchQuery] = useState('');
   const deferredSearchQuery = useDeferredValue(searchQuery);

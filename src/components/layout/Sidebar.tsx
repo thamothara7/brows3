@@ -9,15 +9,11 @@ import {
   ListItemText,
   Typography,
   Divider,
-  TextField,
-  InputAdornment,
   Skeleton,
   Tooltip,
   Button,
 } from '@mui/material';
 import {
-  Cloud as CloudIcon,
-  Folder as FolderIcon,
   Star as StarIcon,
   CloudUpload as UploadIcon,
   CloudDownload as DownloadIcon,
@@ -26,13 +22,10 @@ import {
   Home as HomeIcon,
   Info as InfoIcon,
   Storage as StorageIcon,
-  Search as SearchIcon,
-  Lock as LockIcon,
-  Explore as ExploreIcon,
 } from '@mui/icons-material';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import AboutDialog from '@/components/dialogs/AboutDialog';
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { useProfileStore } from '@/store/profileStore';
 import { useBuckets } from '@/hooks/useBuckets';
 import { useAppStore } from '@/store/appStore';

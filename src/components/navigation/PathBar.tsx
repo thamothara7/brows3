@@ -15,10 +15,7 @@ import {
 import { 
   Search as SearchIcon, 
   ArrowForward as GoIcon,
-  DataObject as ObjectIcon,
-  Storage as BucketIcon,
   History as HistoryIcon,
-  Clear as ClearIcon,
 } from '@mui/icons-material';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAppStore } from '@/store/appStore';
@@ -29,7 +26,7 @@ import { toast } from '@/store/toastStore';
 export default function PathBar() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { addTab, setActiveTab, tabs } = useAppStore();
+  const { addTab } = useAppStore();
   const { recentPathEntries, addPath, clearHistory } = useHistoryStore();
   const activeProfileId = useProfileStore((state) => state.activeProfileId);
   

@@ -33,7 +33,7 @@ export const preloadMonaco = () => {
   monacoPreloaded = true;
   
   // Initialize Monaco in background
-  loader.init().then((monaco) => {
+  loader.init().then(() => {
     console.log('Monaco Editor preloaded successfully');
   }).catch((err) => {
     console.warn('Monaco preload failed, will load on demand:', err);

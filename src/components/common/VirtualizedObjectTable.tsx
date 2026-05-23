@@ -1,6 +1,6 @@
 'use client';
 
-import { memo, useMemo, useCallback, useState, useEffect } from 'react';
+import { memo, useMemo, useCallback } from 'react';
 import type { CSSProperties, HTMLAttributes } from 'react';
 import {
   Box,

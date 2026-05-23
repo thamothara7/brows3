@@ -5,7 +5,6 @@ import {
     Close as CloseIcon, 
     Add as AddIcon,
     Cloud as BucketIcon,
-    Storage as ObjectIcon,
     Home as HomeIcon,
     Star as StarIcon,
     History as RecentIcon,
@@ -13,7 +12,7 @@ import {
     FileDownload as DownloadIcon,
     Settings as SettingsIcon,
 } from '@mui/icons-material';
-import { useAppStore, Tab as TabType } from '@/store/appStore';
+import { useAppStore } from '@/store/appStore';
 import { useProfileStore } from '@/store/profileStore';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { useEffect } from 'react';

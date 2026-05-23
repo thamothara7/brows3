@@ -16,7 +16,6 @@ import {
   IconButton,
   Tooltip,
   Button,
-  Collapse,
 } from '@mui/material';
 import type { ChipProps, LinearProgressProps } from '@mui/material';
 import {

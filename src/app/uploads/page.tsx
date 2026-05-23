@@ -16,7 +16,6 @@ import {
   IconButton,
   Tooltip,
   Button,
-  Collapse,
 } from '@mui/material';
 import type { ChipProps, LinearProgressProps } from '@mui/material';
 import {
@@ -55,17 +54,6 @@ const formatBytes = (bytes: number): string => {
   const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
   return `${(bytes / Math.pow(k, i)).toFixed(1)} ${sizes[i]}`;
-};
-
-// Format time ago
-const formatTimeAgo = (timestamp: number): string => {
-  const now = Date.now();
-  const diff = now - timestamp;
-  
-  if (diff < 60000) return 'Just now';
-  if (diff < 3600000) return `${Math.floor(diff / 60000)}m ago`;
-  if (diff < 86400000) return `${Math.floor(diff / 3600000)}h ago`;
-  return new Date(timestamp).toLocaleDateString();
 };
 
 // Format duration
@@ -306,13 +294,6 @@ function SingleRow({ job, isNested = false }: { job: TransferJob; isNested?: boo
     // Actions
     const handleCancel = () => cancelJob(job.id);
     const handleRetry = () => retryJob(job.id);
-
-    // Date formatting (handling ms)
-    const startDate = new Date(job.created_at).toLocaleString();
-    const finishedDate = job.finished_at ? new Date(job.finished_at).toLocaleString() : '—';
-    const elapsed = job.finished_at ? formatDuration(job.finished_at - job.created_at) : (
-        job.status === 'InProgress' ? <span className="elapsed-timer">{formatTimeAgo(job.created_at).replace(' ago', '')}</span> : '—'
-    );
 
     return (
         <TableRow sx={{ '&:last-child td, &:last-child th': { border: 0 }, bgcolor: isNested ? 'action.hover' : 'inherit' }}>

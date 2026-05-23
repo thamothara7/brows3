@@ -8,6 +8,7 @@ import {
   useTheme,
 } from '@mui/material';
 import { GitHub as GitHubIcon } from '@mui/icons-material';
+import Image from 'next/image';
 import { getVersion } from '@tauri-apps/api/app';
 import { useState, useEffect } from 'react';
 import { BaseDialog } from '../common/BaseDialog';
@@ -55,7 +56,7 @@ export default function AboutDialog({ open, onClose }: AboutDialogProps) {
               borderColor: alpha(theme.palette.divider, 0.5)
             }}
           >
-            <img src="/logo.png" alt="Brows3" style={{ width: '80%', height: '80%', objectFit: 'contain' }} />
+            <Image src="/logo.png" alt="Brows3" width={72} height={72} style={{ objectFit: 'contain' }} />
           </Box>
         </Box>
         

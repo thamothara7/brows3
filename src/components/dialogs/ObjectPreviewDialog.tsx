@@ -4,7 +4,6 @@ import {
   Box,
   Typography,
   CircularProgress,
-  IconButton,
   Alert,
   useTheme,
   alpha,
@@ -363,6 +362,7 @@ export default function ObjectPreviewDialog({
                 bgcolor: alpha(theme.palette.background.paper, 0.5)
               }}>
                 {isImageRendering && <CircularProgress size={32} sx={{ position: 'absolute' }} />}
+                {/* eslint-disable-next-line @next/next/no-img-element -- presigned S3 URLs are dynamic and not known to Next image config. */}
                 <img 
                   src={presignedUrl} 
                   alt={filename}

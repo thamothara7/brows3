@@ -10,9 +10,7 @@ import {
   ListItemButton,
   ListItemIcon,
   ListItemText,
-  IconButton,
   Paper,
-  Tooltip,
   Button,
 } from '@mui/material';
 import {
@@ -20,7 +18,6 @@ import {
   Folder as FolderIcon,
   InsertDriveFile as FileIcon,
   Delete as DeleteIcon,
-  OpenInNew as OpenIcon,
 } from '@mui/icons-material';
 import { useHistoryStore, RecentItem } from '@/store/historyStore';
 import { useAppStore } from '@/store/appStore';
