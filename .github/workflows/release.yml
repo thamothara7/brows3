@@ -33,6 +33,7 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: 22
+          package-manager-cache: false
 
       - name: Compute release version
         id: release_meta
@@ -92,6 +93,7 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: 22
+          package-manager-cache: false
 
       - name: install pnpm
         uses: pnpm/action-setup@v4
@@ -211,6 +213,7 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: 22
+          package-manager-cache: false
 
       - name: Compute release version
         shell: bash
