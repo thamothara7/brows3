@@ -18,16 +18,18 @@ struct SecretsData {
 pub struct KeychainStorage {
     app_name: String,
     fallback_path: PathBuf,
+    force_fallback: bool,
 }
 
 impl KeychainStorage {
-    pub fn new(app_name: &str, config_dir: &Path) -> Self {
+    pub fn new(app_name: &str, config_dir: &Path, force_fallback: bool) -> Self {
         Self {
             app_name: app_name.to_string(),
             fallback_path: config_dir.join(FALLBACK_SECRETS_FILE),
+            force_fallback,
         }
     }
-    
+
     fn get_entry(&self, key: &str) -> Result<Entry> {
         Entry::new(SERVICE_NAME, &format!("{}-{}", self.app_name, key))
             .map_err(|e| AppError::KeychainError(e.to_string()))
@@ -43,8 +45,9 @@ impl KeychainStorage {
             return Ok(SecretsData::default());
         }
 
-        serde_json::from_str(&content)
-            .map_err(|e| AppError::SerializationError(format!("Failed to parse fallback secrets store: {}", e)))
+        serde_json::from_str(&content).map_err(|e| {
+            AppError::SerializationError(format!("Failed to parse fallback secrets store: {}", e))
+        })
     }
 
     fn write_fallback_secrets(&self, data: &SecretsData) -> Result<()> {
@@ -73,10 +76,9 @@ impl KeychainStorage {
 
     fn get_fallback(&self, key: &str) -> Result<String> {
         let data = self.read_fallback_secrets()?;
-        data.secrets
-            .get(key)
-            .cloned()
-            .ok_or_else(|| AppError::KeychainError("Secret not found in fallback storage".to_string()))
+        data.secrets.get(key).cloned().ok_or_else(|| {
+            AppError::KeychainError("Secret not found in fallback storage".to_string())
+        })
     }
 
     fn delete_fallback(&self, key: &str) -> Result<()> {
@@ -84,9 +86,13 @@ impl KeychainStorage {
         data.secrets.remove(key);
         self.write_fallback_secrets(&data)
     }
-    
+
     /// Store a secret in the OS keychain
     pub fn store(&self, key: &str, secret: &str) -> Result<()> {
+        if self.force_fallback {
+            return self.store_fallback(key, secret);
+        }
+
         let entry = self.get_entry(key)?;
         match entry.set_password(secret) {
             Ok(()) => {
@@ -94,36 +100,77 @@ impl KeychainStorage {
                 Ok(())
             }
             Err(err) => {
-                log::warn!("Native keychain store failed for '{}', falling back to local secrets file: {}", key, err);
+                log::warn!(
+                    "Native keychain store failed for '{}', falling back to local secrets file: {}",
+                    key,
+                    err
+                );
                 self.store_fallback(key, secret)
             }
         }
     }
-    
+
     /// Retrieve a secret from the OS keychain
     pub fn get(&self, key: &str) -> Result<String> {
+        if self.force_fallback {
+            return self.get_fallback(key);
+        }
+
         let entry = self.get_entry(key)?;
         match entry.get_password() {
             Ok(secret) => Ok(secret),
             Err(err) => {
-                log::warn!("Native keychain read failed for '{}', trying local secrets file: {}", key, err);
+                log::warn!(
+                    "Native keychain read failed for '{}', trying local secrets file: {}",
+                    key,
+                    err
+                );
                 self.get_fallback(key)
             }
         }
     }
-    
+
     /// Delete a secret from the OS keychain
     pub fn delete(&self, key: &str) -> Result<()> {
+        if self.force_fallback {
+            let _ = self.delete_fallback(key);
+            return Ok(());
+        }
+
         let entry = self.get_entry(key)?;
         if let Err(err) = entry.delete_credential() {
-            log::warn!("Native keychain delete failed for '{}', clearing local fallback if present: {}", key, err);
+            log::warn!(
+                "Native keychain delete failed for '{}', clearing local fallback if present: {}",
+                key,
+                err
+            );
         }
         let _ = self.delete_fallback(key);
         Ok(())
     }
-    
+
     /// Check if a secret exists in the keychain
     pub fn exists(&self, key: &str) -> bool {
         self.get(key).is_ok()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::KeychainStorage;
+
+    #[test]
+    fn forced_fallback_stores_reads_and_deletes_secret() {
+        let config_dir =
+            std::env::temp_dir().join(format!("brows3-keychain-test-{}", uuid::Uuid::new_v4()));
+        let storage = KeychainStorage::new("brows3-test", &config_dir, true);
+
+        storage.store("profile-1", "secret-value").unwrap();
+        assert_eq!(storage.get("profile-1").unwrap(), "secret-value");
+
+        storage.delete("profile-1").unwrap();
+        assert!(storage.get("profile-1").is_err());
+
+        let _ = std::fs::remove_dir_all(config_dir);
     }
 }

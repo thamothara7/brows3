@@ -79,6 +79,8 @@ jobs:
             args: "--target x86_64-apple-darwin --bundles app,dmg"
           - platform: "ubuntu-22.04" # for Linux
             args: ""
+          - platform: "ubuntu-22.04-arm" # for Linux ARM64
+            args: ""
           - platform: "windows-latest" # for Windows
             args: ""
 
@@ -103,7 +105,7 @@ jobs:
           targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
 
       - name: install dependencies (ubuntu only)
-        if: matrix.platform == 'ubuntu-22.04'
+        if: startsWith(matrix.platform, 'ubuntu-')
         run: |
           sudo apt-get update
           sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.0-dev libappindicator3-dev librsvg2-dev patchelf
@@ -145,6 +147,16 @@ jobs:
         run: |
           pnpm tauri build ${{ matrix.args }}
 
+      - name: Create Windows portable zip
+        if: matrix.platform == 'windows-latest'
+        shell: bash
+        run: |
+          PORTABLE_DIR="src-tauri/target/release/bundle/portable/Brows3_${RELEASE_VERSION}_x64-portable"
+          mkdir -p "$PORTABLE_DIR"
+          cp src-tauri/target/release/brows3.exe "$PORTABLE_DIR/Brows3.exe"
+          touch "$PORTABLE_DIR/brows3.portable"
+          7z a "src-tauri/target/release/bundle/portable/Brows3_${RELEASE_VERSION}_x64-portable.zip" "$PORTABLE_DIR"/*
+
       - name: Upload release assets
         shell: bash
         env:
@@ -158,6 +170,7 @@ jobs:
             \( \
               -path '*/bundle/msi/*' -o \
               -path '*/bundle/nsis/*' -o \
+              -path '*/bundle/portable/*' -o \
               -path '*/bundle/appimage/*' -o \
               -path '*/bundle/deb/*' -o \
               -path '*/bundle/dmg/*' -o \
@@ -166,6 +179,7 @@ jobs:
             \( \
               -name '*.msi' -o -name '*.msi.sig' -o -name '*.msi.zip' -o -name '*.msi.zip.sig' -o \
               -name '*-setup.exe' -o -name '*-setup.exe.sig' -o -name '*.nsis.zip' -o -name '*.nsis.zip.sig' -o \
+              -name '*-portable.zip' -o \
               -name '*.AppImage' -o -name '*.AppImage.sig' -o \
               -name '*.deb' -o -name '*.deb.sig' -o \
               -name '*.dmg' -o -name '*.dmg.sig' -o \
@@ -300,6 +314,9 @@ jobs:
           
           # Linux (AppImage) - matches Brows3_<version>_amd64.AppImage
           add_platform "linux-x86_64" "_amd64\\.AppImage$" "_amd64\\.AppImage\\.sig$"
+
+          # Linux ARM64 (AppImage) - matches Brows3_<version>_arm64.AppImage or _aarch64.AppImage
+          add_platform "linux-aarch64" "_(arm64|aarch64)\\.AppImage$" "_(arm64|aarch64)\\.AppImage\\.sig$"
           
           # Windows (NSIS) - matches Brows3_<version>_x64-setup.exe
           add_platform "windows-x86_64" "_x64-setup\\.exe$" "_x64-setup\\.exe\\.sig$"
