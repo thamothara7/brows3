@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { browserStorage } from './browserStorage';
 
 export interface ClipboardItem {
   bucket: string;
@@ -27,6 +28,7 @@ export const useClipboardStore = create<ClipboardState>()(
     }),
     {
       name: 'brows3-clipboard',
+      storage: browserStorage,
     }
   )
 );

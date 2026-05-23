@@ -1,6 +1,7 @@
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { browserStorage } from './browserStorage';
 
 // Recent item type for folder navigation history
 export interface RecentItem {
@@ -122,6 +123,7 @@ export const useHistoryStore = create<HistoryState>()(
     }),
     {
       name: 'brows3-history',
+      storage: browserStorage,
       merge: (persistedState, currentState) => {
         const persisted = persistedState as Partial<HistoryState> | undefined;
         const legacyRecentPaths = Array.isArray(persisted?.recentPaths) ? persisted.recentPaths : [];

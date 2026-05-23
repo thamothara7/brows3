@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { browserStorage } from './browserStorage';
 
 interface SettingsState {
   theme: 'light' | 'dark' | 'system';
@@ -26,6 +27,7 @@ export const useSettingsStore = create<SettingsState>()(
     }),
     {
       name: 'brows3-settings',
+      storage: browserStorage,
     }
   )
 );

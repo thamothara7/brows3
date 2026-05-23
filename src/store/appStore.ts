@@ -2,6 +2,7 @@
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { browserStorage } from './browserStorage';
 
 export interface Tab {
   id: string;
@@ -116,6 +117,7 @@ export const useAppStore = create<AppState>()(
     }),
     {
       name: 'brows3-app-v2', // Versioned name for new state structure
+      storage: browserStorage,
     }
   )
 );
