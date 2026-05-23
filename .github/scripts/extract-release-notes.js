@@ -32,6 +32,6 @@ try {
   }
 
   console.log(`Brows3 ${version}\n\nAutomated release from the latest main branch changes.`);
-} catch (err) {
+} catch {
   console.log(`Brows3 ${version}\n\nAutomated release from the latest main branch changes.`);
 }

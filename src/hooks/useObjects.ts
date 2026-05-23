@@ -79,13 +79,13 @@ export function useObjects(bucketName: string, bucketRegion?: string, prefix = '
       }
       
       return result;
-    } catch (err: any) {
+    } catch (err) {
       if (currentFetchId !== fetchIdRef.current || currentViewKey !== viewKeyRef.current) return null;
 
       if (process.env.NODE_ENV === 'development') {
         console.warn(`Failed to load bucket "${bucketName}" with prefix "${prefix}":`, err);
       }
-      setError(err.message || String(err));
+      setError(err instanceof Error ? err.message : String(err));
       return null;
     } finally {
       if (currentFetchId === fetchIdRef.current) {

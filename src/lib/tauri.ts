@@ -15,7 +15,7 @@ const getTauriInvoke = async () => {
 };
 
 // Monitored invoke wrapper
-const invoke = async <T>(cmd: string, args?: any): Promise<T> => {
+const invoke = async <T>(cmd: string, args?: Record<string, unknown>): Promise<T> => {
   const store = useMonitorStore.getState();
   store.incrementRequests();
   

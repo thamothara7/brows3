@@ -34,12 +34,11 @@ export default function Footer() {
   const { discoveredRegions } = useAppStore();
   const { buckets, isCached, cacheAge, isLoading } = useBuckets({ enabled: !!activeProfileId });
   const searchParams = useSearchParams();
-  const [appVersion, setAppVersion] = useState('');
+  const [appVersion, setAppVersion] = useState(() => (isTauri() ? '' : 'web'));
   
   // Fetch app version from Tauri
   useEffect(() => {
     if (!isTauri()) {
-      setAppVersion('web');
       return;
     }
 

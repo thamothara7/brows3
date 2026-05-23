@@ -99,7 +99,7 @@ function HomeContent() {
     if (s3UriMatch) {
       const bucket = s3UriMatch[1];
       const region = s3UriMatch[2];
-      let rawPrefix = s3UriMatch[4] || '';
+      const rawPrefix = s3UriMatch[4] || '';
       const hasTrailingSlash = rawPrefix.endsWith('/');
       const prefix = rawPrefix.replace(/\/$/, '');
       return { bucket, region, prefix, hasTrailingSlash };

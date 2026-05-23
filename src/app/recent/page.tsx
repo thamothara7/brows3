@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Box,
@@ -31,6 +32,7 @@ export default function RecentPage() {
   const { addTab, discoveredRegions } = useAppStore();
   const { activeProfileId, profiles } = useProfileStore();
   const activeProfile = profiles.find((profile) => profile.id === activeProfileId);
+  const [now] = useState(() => Date.now());
 
   const visibleRecentItems = recentItems.filter((item) => item.profileId === activeProfileId);
 
@@ -58,7 +60,6 @@ export default function RecentPage() {
   };
 
   const formatTime = (timestamp: number) => {
-    const now = Date.now();
     const diff = now - timestamp;
     
     if (diff < 60000) return 'Just now';

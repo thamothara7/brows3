@@ -222,10 +222,10 @@ function BucketContent() {
             
             // CRITICAL FIX: Only update if this is still the latest search request
             if (currentSequence === searchSequenceRef.current) {
-                setSearchResults(results as any);
+                setSearchResults(results);
                 
                 // Show message if no results
-                if ((results as any).length === 0) {
+                if (results.length === 0) {
                     toast.info('No Results', `No objects found matching "${query}"`);
                 }
             }

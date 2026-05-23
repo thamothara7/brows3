@@ -3,6 +3,7 @@
 import React from 'react';
 import {
   Dialog,
+  DialogProps,
   DialogTitle,
   DialogContent,
   DialogActions,
@@ -26,7 +27,7 @@ export interface BaseDialogProps {
   maxWidth?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | false;
   fullWidth?: boolean;
   sx?: SxProps<Theme>;
-  PaperProps?: any;
+  PaperProps?: DialogProps['PaperProps'];
 }
 
 export const BaseDialog: React.FC<BaseDialogProps> = ({

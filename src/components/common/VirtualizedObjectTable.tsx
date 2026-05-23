@@ -1,6 +1,7 @@
 'use client';
 
-import { memo, useMemo, useCallback, useRef, useState, useEffect } from 'react';
+import { memo, useMemo, useCallback, useState, useEffect } from 'react';
+import type { CSSProperties, HTMLAttributes } from 'react';
 import {
   Box,
   Table,
@@ -146,26 +147,50 @@ interface Props {
   onEndReached?: () => void;
 }
 
-// Lightweight table components with explicit backgrounds for WebKit
-const VirtuosoComponents: TableComponents<RowData, ContextType> = {
-  Scroller: memo(({ style, ...props }: any) => (
-    <Box 
-      {...props} 
+type ScrollerProps = HTMLAttributes<HTMLDivElement> & { style?: CSSProperties };
+type TableElementProps = HTMLAttributes<HTMLTableElement>;
+type TableSectionProps = HTMLAttributes<HTMLTableSectionElement>;
+type TableRowElementProps = HTMLAttributes<HTMLTableRowElement> & { item?: RowData };
+
+const VirtuosoScroller = memo(function VirtuosoScroller({ style, ...props }: ScrollerProps) {
+  return (
+    <Box
+      {...props}
       style={style}
-      sx={{ 
+      sx={{
         bgcolor: 'background.paper',
         '&::-webkit-scrollbar': { width: 6, height: 6 },
         '&::-webkit-scrollbar-thumb': { bgcolor: 'grey.600', borderRadius: 3 },
         willChange: 'transform',
-      }} 
+      }}
     />
-  )),
-  Table: memo((props: any) => (
-    <Table {...props} size="small" sx={{ tableLayout: 'fixed', minWidth: '100%', bgcolor: 'background.paper' }} />
-  )),
-  TableHead: memo((props: any) => <TableHead {...props} sx={{ bgcolor: 'background.default' }} />),
-  TableRow: memo(({ item, ...props }: any) => <TableRow hover {...props} sx={{ bgcolor: 'background.paper' }} />),
-  TableBody: memo((props: any) => <TableBody {...props} sx={{ bgcolor: 'background.paper' }} />),
+  );
+});
+
+const VirtuosoTable = memo(function VirtuosoTable(props: TableElementProps) {
+  return <Table {...props} size="small" sx={{ tableLayout: 'fixed', minWidth: '100%', bgcolor: 'background.paper' }} />;
+});
+
+const VirtuosoTableHead = memo(function VirtuosoTableHead(props: TableSectionProps) {
+  return <TableHead {...props} sx={{ bgcolor: 'background.default' }} />;
+});
+
+const VirtuosoTableRow = memo(function VirtuosoTableRow({ item, ...props }: TableRowElementProps) {
+  void item;
+  return <TableRow hover {...props} sx={{ bgcolor: 'background.paper' }} />;
+});
+
+const VirtuosoTableBody = memo(function VirtuosoTableBody(props: TableSectionProps) {
+  return <TableBody {...props} sx={{ bgcolor: 'background.paper' }} />;
+});
+
+// Lightweight table components with explicit backgrounds for WebKit
+const VirtuosoComponents: TableComponents<RowData, ContextType> = {
+  Scroller: VirtuosoScroller,
+  Table: VirtuosoTable,
+  TableHead: VirtuosoTableHead,
+  TableRow: VirtuosoTableRow,
+  TableBody: VirtuosoTableBody,
 };
 
 // Memoized row component for performance - prevents flickering on Ubuntu/WebKitGTK
@@ -397,34 +422,16 @@ export const VirtualizedObjectTable = memo(function VirtualizedObjectTable({
     </TableRow>
   ), [allSelected, someSelected, sortField, sortDirection, onSelectAll, onSortChange]);
 
-  // CRITICAL FIX FOR UBUNTU/WEBKITGTK CRASH:
-  // We use a STABLE context ref that never changes identity.
-  // The context object itself is mutable and we update its properties directly.
-  // This prevents Virtuoso from detecting context changes and triggering a full re-render.
-  const contextRef = useRef({
+  const context = useMemo<ContextType>(() => ({
     selectedKeys,
     onSelect,
     onNavigate,
     onPreview,
     onEdit,
     onMenuOpen,
-  });
-  
-  // Update the context ref properties on every render (but object identity stays same)
-  contextRef.current.selectedKeys = selectedKeys;
-  contextRef.current.onSelect = onSelect;
-  contextRef.current.onNavigate = onNavigate;
-  contextRef.current.onPreview = onPreview;
-  contextRef.current.onEdit = onEdit;
-  contextRef.current.onMenuOpen = onMenuOpen;
-  
-  // The context passed to Virtuoso - always the same object reference
-  const context = contextRef.current;
+  }), [selectedKeys, onSelect, onNavigate, onPreview, onEdit, onMenuOpen]);
 
-  // Row renderer - COMPLETELY STABLE (no deps)
-  // This is the key fix for Ubuntu crashes: Virtuoso sees the same function reference
-  // AND the same context object, preventing render cascades on WebKitGTK.
-  const rowContent = useCallback((index: number, row: RowData, ctx: typeof context) => (
+  const rowContent = useCallback((index: number, row: RowData, ctx: ContextType) => (
     <RowContent
       key={row.key}
       row={row}
@@ -471,7 +478,7 @@ export const VirtualizedObjectTable = memo(function VirtualizedObjectTable({
           <TableVirtuoso
             data={rows}
             context={context}
-            components={VirtuosoComponents as any}
+            components={VirtuosoComponents}
             fixedHeaderContent={headerContent}
             itemContent={rowContent}
             style={{ height: '100%' }}

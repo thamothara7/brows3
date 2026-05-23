@@ -19,16 +19,11 @@ interface AboutDialogProps {
 }
 
 export default function AboutDialog({ open, onClose }: AboutDialogProps) {
-  const [version, setVersion] = useState<string>('...');
+  const [version, setVersion] = useState<string>(() => (isTauri() ? '...' : 'Web'));
   const theme = useTheme();
 
   useEffect(() => {
-    if (!open) {
-      return;
-    }
-
-    if (!isTauri()) {
-      setVersion('Web');
+    if (!open || !isTauri()) {
       return;
     }
 

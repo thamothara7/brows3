@@ -32,7 +32,10 @@ interface ToastItemProps {
 function ToastItem({ toast, onClose, onShowDetails }: ToastItemProps) {
   // Store onClose in a ref to prevent timer reset when parent re-renders
   const onCloseRef = useRef(onClose);
-  onCloseRef.current = onClose;
+
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
 
   useEffect(() => {
     if (toast.autoHide) {

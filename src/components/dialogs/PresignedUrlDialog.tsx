@@ -130,9 +130,9 @@ export default function PresignedUrlDialog({
       if (requestId === generateRequestIdRef.current) {
         setGeneratedUrl(url);
       }
-    } catch (err: any) {
+    } catch (err) {
       if (requestId === generateRequestIdRef.current) {
-        const errMsg = err?.message || String(err);
+        const errMsg = err instanceof Error ? err.message : String(err);
         setError(`Failed to generate URL: ${errMsg}`);
       }
     } finally {

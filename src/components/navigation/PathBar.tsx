@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { 
   Paper, 
   Autocomplete,
@@ -43,24 +43,14 @@ export default function PathBar() {
     .filter((entry) => entry.profileId === activeProfileId)
     .map((entry) => entry.path);
 
-  // Sync input value with current URL params
-  useEffect(() => {
-    // Only sync if the user is NOT actively typing/focused
-    if (isFocused) return;
-
-    if (!searchParams) return;
-
+  const urlInputValue = useMemo(() => {
     const bucket = searchParams.get('name');
     const region = searchParams.get('region');
     const prefix = searchParams.get('prefix') || '';
-    
-    if (bucket) {
-      const uri = `s3://${bucket}${region ? `@${region}` : ''}/${prefix}`;
-      setInputValue(uri);
-    } else {
-      setInputValue('');
-    }
-  }, [searchParams, isFocused]);
+
+    return bucket ? `s3://${bucket}${region ? `@${region}` : ''}/${prefix}` : '';
+  }, [searchParams]);
+  const activeInputValue = isFocused ? inputValue : urlInputValue;
 
   // Global Shortcut: Ctrl+Shift+P (or Cmd+Shift+P)
   useEffect(() => {
@@ -92,7 +82,7 @@ export default function PathBar() {
     if (s3UriMatch) {
       const bucket = s3UriMatch[1];
       const region = s3UriMatch[2]; // Optional region
-      let rawPrefix = s3UriMatch[4] || ''; // The actual path after s3://bucket/
+      const rawPrefix = s3UriMatch[4] || ''; // The actual path after s3://bucket/
       
       const hasTrailingSlash = rawPrefix.endsWith('/');
       
@@ -218,7 +208,7 @@ export default function PathBar() {
       open={isOpen}
       onOpen={() => setIsOpen(true)}
       onClose={() => setIsOpen(false)}
-      inputValue={inputValue}
+      inputValue={activeInputValue}
       onHighlightChange={(_, option) => setHighlightedOption(option)}
       onInputChange={(_, newVal, reason) => {
         // IMPORTANT: Ignore 'reset' events which MUI triggers on blur or selection
@@ -243,7 +233,7 @@ export default function PathBar() {
           if (isOpen && highlightedOption) {
             return;
           }
-          handleNavigate(inputValue);
+          handleNavigate(activeInputValue);
         }
       }}
       renderOption={(props, option) => {
@@ -289,23 +279,20 @@ export default function PathBar() {
         ) : null
       )}
       renderInput={(params) => {
-        // Merge refs to ensure both MUI and our shortcuts work
-        const { ref, ...inputProps } = params.inputProps as any;
         return (
           <TextField
             {...params}
-            onFocus={() => setIsFocused(true)}
-            onBlur={(e: any) => {
+            onFocus={() => {
+              setInputValue(urlInputValue);
+              setIsFocused(true);
+            }}
+            onBlur={(e) => {
               setIsFocused(false);
-              params.inputProps.onBlur?.(e);
+              params.inputProps.onBlur?.(
+                e as Parameters<NonNullable<typeof params.inputProps.onBlur>>[0]
+              );
             }}
-            inputRef={(el: HTMLInputElement) => {
-              (inputRef as any).current = el;
-              if (ref) {
-                if (typeof ref === 'function') ref(el);
-                else ref.current = el;
-              }
-            }}
+            inputRef={inputRef}
             placeholder="Go to path... (e.g. s3://bucket@region/folder/)"
             variant="outlined"
             size="small"

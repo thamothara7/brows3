@@ -24,6 +24,7 @@ interface TransferState {
 }
 
 let latestRefreshRequestId = 0;
+let missingJobRefreshInProgress = false;
 
 export const useTransferStore = create<TransferState>((set, get) => ({
   jobs: [],
@@ -67,11 +68,10 @@ export const useTransferStore = create<TransferState>((set, get) => ({
     
     if (!job) {
       // Throttled refresh to prevent storm
-      const stateAny = get() as any;
-      if (!stateAny._isRefreshing) {
-          stateAny._isRefreshing = true;
+      if (!missingJobRefreshInProgress) {
+          missingJobRefreshInProgress = true;
           setTimeout(() => {
-             get().refreshJobs().finally(() => { stateAny._isRefreshing = false; });
+             get().refreshJobs().finally(() => { missingJobRefreshInProgress = false; });
           }, 500);
       }
       return state;

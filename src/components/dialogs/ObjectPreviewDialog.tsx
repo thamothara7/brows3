@@ -52,7 +52,7 @@ export default function ObjectPreviewDialog({
   const [isSaving, setIsSaving] = useState(false);
   const [isImageRendering, setIsImageRendering] = useState(false);
   const [isPdfLoading, setIsPdfLoading] = useState(false);
-  const editorRef = useRef<any>(null);
+  const editorRef = useRef<Parameters<OnMount>[0] | null>(null);
   const initialVersionIdRef = useRef<number>(0);
   const [currentVersionId, setCurrentVersionId] = useState<number>(0);
   const loadRequestIdRef = useRef(0);
@@ -223,7 +223,7 @@ export default function ObjectPreviewDialog({
     }
   };
 
-  const handleEditorDidMount: OnMount = (editor, monaco) => {
+  const handleEditorDidMount: OnMount = (editor) => {
     editorRef.current = editor;
     // Store the initial version ID when editor mounts with content
     // This allows us to compare against the original state even after undo

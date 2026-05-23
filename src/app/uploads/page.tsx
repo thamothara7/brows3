@@ -18,6 +18,7 @@ import {
   Button,
   Collapse,
 } from '@mui/material';
+import type { ChipProps, LinearProgressProps } from '@mui/material';
 import {
   CloudUpload as UploadIcon,
   CheckCircle as CheckCircleIcon,
@@ -35,6 +36,17 @@ import {
 
 import { useTransferStore } from '@/store/transferStore';
 import { TransferJob } from '@/lib/tauri';
+
+type StatusColor = NonNullable<ChipProps['color']>;
+type ProgressColor = NonNullable<LinearProgressProps['color']>;
+type TransferTableRow =
+  | { id: string; isGroup: true; items: TransferJob[]; latest: number; name: string }
+  | { id: string; isGroup: false; item: TransferJob; latest: number };
+type TransferGroupRow = Extract<TransferTableRow, { isGroup: true }>;
+
+const toProgressColor = (color: StatusColor): ProgressColor => (
+  color === 'default' ? 'primary' : color
+);
 
 // Format bytes
 const formatBytes = (bytes: number): string => {
@@ -69,7 +81,7 @@ const formatDuration = (ms: number): string => {
 };
 
 // Get status info
-const getStatusInfo = (status: TransferJob['status']): { label: string; color: 'success' | 'error' | 'warning' | 'info' | 'default'; icon: React.ReactNode } => {
+const getStatusInfo = (status: TransferJob['status']): { label: string; color: StatusColor; icon?: React.ReactElement } => {
   if (status === 'Completed') {
     return { label: 'Completed', color: 'success', icon: <CheckCircleIcon fontSize="small" /> };
   }
@@ -85,7 +97,7 @@ const getStatusInfo = (status: TransferJob['status']): { label: string; color: '
   if (status === 'Cancelled') {
     return { label: 'Cancelled', color: 'default', icon: <CancelIcon fontSize="small" /> };
   }
-  return { label: String(status), color: 'default', icon: null };
+  return { label: String(status), color: 'default' };
 };
 
 export default function UploadsPage() {
@@ -103,7 +115,7 @@ export default function UploadsPage() {
   [jobs]);
   
   // Grouping logic
-  const groupedUploads = useMemo(() => {
+  const groupedUploads = useMemo<TransferTableRow[]>(() => {
     const groups: Record<string, TransferJob[]> = {};
     const standalone: TransferJob[] = [];
     
@@ -125,7 +137,7 @@ export default function UploadsPage() {
       
       return {
         id: groupId,
-        isGroup: true,
+        isGroup: true as const,
         items,
         latest,
         name
@@ -133,7 +145,7 @@ export default function UploadsPage() {
     });
     
     return [
-        ...standalone.map(j => ({ id: j.id, isGroup: false, item: j, latest: j.created_at })),
+        ...standalone.map(j => ({ id: j.id, isGroup: false as const, item: j, latest: j.created_at })),
         ...groupList
     ].sort((a, b) => b.latest - a.latest);
   }, [uploads]);
@@ -226,8 +238,8 @@ export default function UploadsPage() {
             </TableHead>
             <TableBody>
               {(() => {
-                  const folders = groupedUploads.filter((row: any) => row.isGroup);
-                  const files = groupedUploads.filter((row: any) => !row.isGroup);
+                  const folders = groupedUploads.filter((row): row is TransferGroupRow => row.isGroup);
+                  const files = groupedUploads.filter((row): row is Extract<TransferTableRow, { isGroup: false }> => !row.isGroup);
 
                   return (
                     <>
@@ -238,7 +250,7 @@ export default function UploadsPage() {
                               Folders ({folders.length})
                             </TableCell>
                           </TableRow>
-                          {folders.map((row: any) => (
+                          {folders.map((row) => (
                              <GroupRow key={row.id} group={row} />
                           ))}
                         </>
@@ -251,7 +263,7 @@ export default function UploadsPage() {
                               Files ({files.length})
                             </TableCell>
                           </TableRow>
-                          {files.map((row: any) => (
+                          {files.map((row) => (
                              <SingleRow key={row.id} job={row.item} />
                           ))}
                         </>
@@ -306,10 +318,10 @@ function SingleRow({ job, isNested = false }: { job: TransferJob; isNested?: boo
         <TableRow sx={{ '&:last-child td, &:last-child th': { border: 0 }, bgcolor: isNested ? 'action.hover' : 'inherit' }}>
             <TableCell component="th" scope="row">
                  <Chip 
-                    icon={status.icon as any} 
+                    icon={status.icon} 
                     label={status.label} 
                     size="small" 
-                    color={status.color as any} 
+                    color={status.color} 
                     variant="outlined" 
                     sx={{ borderRadius: 1, height: 24 }}
                 />
@@ -326,7 +338,7 @@ function SingleRow({ job, isNested = false }: { job: TransferJob; isNested?: boo
             <TableCell>
                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
                     <Box sx={{ width: '100%', mr: 1 }}>
-                        <LinearProgress variant="determinate" value={progress} color={status.color as any} sx={{ height: 4, borderRadius: 1 }} />
+                        <LinearProgress variant="determinate" value={progress} color={toProgressColor(status.color)} sx={{ height: 4, borderRadius: 1 }} />
                     </Box>
                     <Typography variant="caption" color="text.secondary">{Math.round(progress)}%</Typography>
                 </Box>
@@ -391,7 +403,7 @@ function SingleRow({ job, isNested = false }: { job: TransferJob; isNested?: boo
     );
 }
 
-function GroupRow({ group }: { group: any }) {
+function GroupRow({ group }: { group: TransferGroupRow }) {
     const [open, setOpen] = useState(false);
     const items = group.items as TransferJob[];
     
@@ -425,7 +437,7 @@ function GroupRow({ group }: { group: any }) {
     const elapsedStr = endTime > 0 ? formatDuration(endTime - startTime) : (activeCount > 0 ? 'In Progress' : '—');
     
     let statusLabel = 'Completed';
-    let statusColor = 'success';
+    let statusColor: StatusColor = 'success';
     
     if (activeCount > 0) {
         statusLabel = `Uploading (${activeCount})`;
@@ -449,7 +461,7 @@ function GroupRow({ group }: { group: any }) {
                     <Chip 
                         label={statusLabel} 
                         size="small" 
-                        color={statusColor as any} 
+                        color={statusColor} 
                         variant="outlined" 
                         sx={{ borderRadius: 1, height: 24 }}
                     />
@@ -488,7 +500,7 @@ function GroupRow({ group }: { group: any }) {
                 <TableCell>
                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                         <Box sx={{ flex: 1, minWidth: 80 }}>
-                            <LinearProgress variant="determinate" value={progress} color={statusColor as any} sx={{ height: 6, borderRadius: 1 }} />
+                            <LinearProgress variant="determinate" value={progress} color={toProgressColor(statusColor)} sx={{ height: 6, borderRadius: 1 }} />
                         </Box>
                         <Typography variant="caption" color="text.secondary" sx={{ minWidth: 35 }}>{Math.round(progress)}%</Typography>
                     </Box>

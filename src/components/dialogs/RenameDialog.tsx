@@ -39,8 +39,8 @@ export default function RenameDialog({ open, onClose, onRename, currentName, isF
     try {
       await onRename(value);
       onClose();
-    } catch (err: any) {
-      setError(err.message || 'Failed to rename');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to rename');
     } finally {
       setIsSubmitting(false);
     }
