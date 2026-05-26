@@ -503,6 +503,29 @@ fn validate_delete_result(
     )))
 }
 
+async fn delete_keys_individually(
+    client: &aws_sdk_s3::Client,
+    bucket_name: &str,
+    keys: &[String],
+) -> Result<()> {
+    for key in keys {
+        client
+            .delete_object()
+            .bucket(bucket_name)
+            .key(key)
+            .send()
+            .await
+            .map_err(|err| {
+                crate::error::AppError::S3Error(format!(
+                    "Fallback delete failed for '{}': {}",
+                    key, err
+                ))
+            })?;
+    }
+
+    Ok(())
+}
+
 #[tauri::command]
 pub async fn delete_objects(
     bucket_name: String,
@@ -537,7 +560,8 @@ pub async fn delete_objects(
         }
     };
 
-    // Delete in batches of 1000
+    // Delete in batches of 1000. Some S3-compatible providers support single-object
+    // deletion but return service errors for DeleteObjects, so fall back per key.
     for chunk in keys.chunks(1000) {
         let delete = build_delete_request(chunk)?;
 
@@ -567,17 +591,28 @@ pub async fn delete_objects(
                          s3_manager.set_bucket_region(&bucket_name, new_region.clone());
                          s3_manager.get_client_for_region(&active_profile, &new_region).await?.clone()
                      };
-                     
-                     let output = new_client.delete_objects()
+
+                     match new_client.delete_objects()
                          .bucket(&bucket_name)
                          .delete(delete)
                          .send()
                          .await
-                         .map_err(|e| crate::error::AppError::S3Error(format!("Retry delete failed: {}", e)))?;
-
-                     validate_delete_result(&bucket_name, &output)?;
+                     {
+                         Ok(output) => validate_delete_result(&bucket_name, &output)?,
+                         Err(retry_err) => {
+                             log::warn!(
+                                 "delete_objects retry failed, falling back to single deletes: {}",
+                                 retry_err
+                             );
+                             delete_keys_individually(&new_client, &bucket_name, chunk).await?;
+                         }
+                     }
                  } else {
-                     return Err(crate::error::AppError::S3Error(err.to_string()));
+                     log::warn!(
+                         "delete_objects region discovery failed, falling back to single deletes: {}",
+                         err
+                     );
+                     delete_keys_individually(&client, &bucket_name, chunk).await?;
                  }
              }
         }
